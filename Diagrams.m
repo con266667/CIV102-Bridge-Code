@@ -21,9 +21,8 @@ for i = 1:n_train
     locations = x_train;
     
     % Reaction forces (Rearranged moment and Fy equations)
-    sum(locations .* P_train)
-    B_y = sum(locations .* P_train) / L
-    A_y = sum(P_train) - B_y
+    B_y = sum(locations .* P_train) / L;
+    A_y = sum(P_train) - B_y;
 
     % Create a vector with forces at locations
     w = zeros(n+1, 1);
