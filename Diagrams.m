@@ -17,7 +17,7 @@ BMDi = zeros(n_train, n+1); % 1 BMD for each train loc.
 % Solve for SFD and BMD with the train at different locations
 
 for i = 1:n_train
-    location = L / (n_train+1) * i; % start location of train (300, 600, 900)
+    location = fix(L / (n_train+1) * i); % start location of train (300, 600, 900)
     
     % Reaction forces (Rearranged moment and Fy equations)
     B_y = location * P / L;
