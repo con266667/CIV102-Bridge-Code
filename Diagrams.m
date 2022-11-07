@@ -30,7 +30,7 @@ for i = 1:n_train
     w(L) = B_y;
 
     % Create SFD and BMD vectors with integration
-    SFDi(1,:) = cumtrapz(w');
+    SFDi(i,:) = cumtrapz(w');
     BMDi(i,:) = cumtrapz(SFDi(i,:));
 end
 
