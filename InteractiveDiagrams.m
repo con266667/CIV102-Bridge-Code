@@ -4,21 +4,20 @@ x = linspace(0, L, n+1); % x-axis (0 to 1201)
 tiledlayout(2, 1);
 
 nexttile;
-sfdplot = plot(x,0*x);
+sfdplot = plot(x,0*x, 'LineWidth', 3);
+title("Shear Force Diagram");
 nexttile;
-bmdplot = plot(x,0*x);
+bmdplot = plot(x,0*x, 'LineWidth', 3);
+title("Bending Moment Diagram");
 h = uicontrol('style','slider','units','pixel','position',[20 20 300 20]);
 addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot));
 
 function makeplot(hObject,sfdplot,bmdplot)
     n = fix(get(hObject,'Value') * 2400);
     
-    %% 0. Initialize Parameters
     L = 1200; % Length of bridge
     P = 400; % Total weight of train [N]
-    
-    %% 1. SFD, BMD under train loading
-    
+        
     x_train = [52 228 392 568 732 908]; % Train Load Locations
     P_train=[1 1 1 1 1 1]*P/6; 
     
