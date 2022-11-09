@@ -9,10 +9,14 @@ title("Shear Force Diagram");
 nexttile;
 bmdplot = plot(x,0*x, 'LineWidth', 3);
 title("Bending Moment Diagram");
-h = uicontrol('style','slider','units','pixel','position',[20 20 300 20]);
-addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot));
+h = uicontrol('style','slider','units','pixel','position',[20 20 300 10]);
+uitxbox = uicontrol('Style','edit',...
+    'String', sprintf('%.2f',-1200), ...
+    'Units','Normalized',...
+    'Position', [0.01, 0.1, 0.1, 0.1]);
+addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot, uitxbox));
 
-function makeplot(hObject,sfdplot,bmdplot)
+function makeplot(hObject,sfdplot,bmdplot,uitxbox)
     n = fix(get(hObject,'Value') * 2400);
     
     L = 1200; % Length of bridge
@@ -43,5 +47,6 @@ function makeplot(hObject,sfdplot,bmdplot)
     BMD = cumtrapz(SFD);
     set(sfdplot,'ydata',SFD);
     set(bmdplot,'ydata',BMD);
+    set(uitxbox, 'String', n - 1200)
     drawnow;
 end
