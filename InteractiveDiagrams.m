@@ -17,7 +17,7 @@ uitxbox = uicontrol('Style','edit',...
 addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot, uitxbox));
 
 function makeplot(hObject,sfdplot,bmdplot,uitxbox)
-    n = fix(get(hObject,'Value') * 2400);
+    n = fix(get(hObject,'Value') * 1200 + 52);
     
     L = 1200; % Length of bridge
     P = 400; % Total weight of train [N]
@@ -27,7 +27,7 @@ function makeplot(hObject,sfdplot,bmdplot,uitxbox)
     
     % Solve for SFD and BMD with the train at different locations
     
-    locations = x_train - 1200 + fix(n);
+    locations = x_train + fix(n);
     locations(0 > locations | locations > 1201) = 0;
     loads = P_train;
     loads(locations == 0) = 0;
@@ -38,15 +38,15 @@ function makeplot(hObject,sfdplot,bmdplot,uitxbox)
     
     % Create a vector with forces at locations
     w = zeros(L+1, 1);
-    w(2) = A_y;
+    w(1) = A_y;
     w(locations(locations>0)) = w(locations(locations>0)) - (P/6);
     w(L) = B_y;
     
     % Get SFD, BMD and plotq
     SFD = cumsum(w');
-    BMD = cumtrapz(SFD);
+    BMD = cumsum(SFD);
     set(sfdplot,'ydata',SFD);
     set(bmdplot,'ydata',BMD);
-    set(uitxbox, 'String', n)
+    set(uitxbox, 'String', n - 52)
     drawnow;
 end
