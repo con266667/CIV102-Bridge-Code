@@ -11,7 +11,7 @@ bmdplot = plot(x,0*x, 'LineWidth', 3);
 title("Bending Moment Diagram");
 h = uicontrol('style','slider','units','pixel','position',[20 20 300 10]);
 uitxbox = uicontrol('Style','edit',...
-    'String', sprintf('%.2f',-1200), ...
+    'String', sprintf('%.2f',0), ...
     'Units','Normalized',...
     'Position', [0.01, 0.1, 0.1, 0.1]);
 addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot, uitxbox));
@@ -42,11 +42,11 @@ function makeplot(hObject,sfdplot,bmdplot,uitxbox)
     w(locations(locations>0)) = w(locations(locations>0)) - (P/6);
     w(L) = B_y;
     
-    % Get SFD, BMD and plot
-    SFD = cumtrapz(w');
+    % Get SFD, BMD and plotq
+    SFD = cumsum(w');
     BMD = cumtrapz(SFD);
     set(sfdplot,'ydata',SFD);
     set(bmdplot,'ydata',BMD);
-    set(uitxbox, 'String', n - 1200)
+    set(uitxbox, 'String', n)
     drawnow;
 end

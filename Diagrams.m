@@ -9,7 +9,7 @@ x = linspace(0, L, n+1); % x-axis (0 to 1201)
 
 x_train = [52 228 392 568 732 908]; % Train Load Locations
 P_train=[1 1 1 1 1 1]*P/6; 
-n_train = 2400;
+n_train = 1200;
 
 SFDi = zeros(n_train, n+1); % 1 SFD for each train loc.
 BMDi = zeros(n_train, n+1); % 1 BMD for each train loc.
@@ -29,12 +29,12 @@ for i = 1:n_train
 
     % Create a vector with forces at locations
     w = zeros(n+1, 1);
-    w(2) = A_y;
+    w(1) = A_y;
     w(locations(locations>0)) = w(locations(locations>0)) -(P/6);
     w(L) = B_y;
 
     % Create SFD and BMD vectors with integration
-    SFDi(i,:) = cumtrapz(w');
+    SFDi(i,:) = cumsum(w');
     BMDi(i,:) = cumtrapz(SFDi(i,:));
 end
 
