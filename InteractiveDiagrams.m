@@ -17,7 +17,7 @@ uitxbox = uicontrol('Style','edit',...
 addlistener(h,'ContinuousValueChange', @(hObject, event) makeplot(hObject,sfdplot, bmdplot, uitxbox));
 
 function makeplot(hObject,sfdplot,bmdplot,uitxbox)
-    n = fix(get(hObject,'Value') * 1200);
+    n = fix(get(hObject,'Value') * 1200 - 52);
     
     L = 1200; % Length of bridge
     P = 400; % Total weight of train [N]
@@ -47,6 +47,6 @@ function makeplot(hObject,sfdplot,bmdplot,uitxbox)
     BMD = cumsum(SFD);
     set(sfdplot,'ydata',SFD);
     set(bmdplot,'ydata',BMD);
-    set(uitxbox, 'String', n)
+    set(uitxbox, 'String', n + 52)
     drawnow;
 end

@@ -3,44 +3,75 @@ clear; close all;
 L = 1200; % Length of bridge
 n = 1200; % Discretize into 1 mm seg.
 P = 400; % Total weight of train [N]
-x = linspace(0, L, n+1); % x-axis (0 to 1201)
+x = linspace(0, L, n+1); % x-axis (1 to 1201)
 
 %% 1. SFD, BMD under train loading
 
 x_train = [52 228 392 568 732 908]; % Train Load Locations
 P_train=[1 1 1 1 1 1]*P/6; 
-n_train = 2400;
+n_train_start = 1;
+n_train = 345;
+
+% n_train_start = 164;
+% n_train = 164;
 
 SFDi = zeros(n_train, n+1); % 1 SFD for each train loc.
 BMDi = zeros(n_train, n+1); % 1 BMD for each train loc.
 
 % Solve for SFD and BMD with the train at different locations
 
-for i = 1:n_train
-    locations = x_train - 1200 + fix(i);
-    locations(0 > locations | locations > 1201) = 0;
+i_max_sfd = 0;
+max_sfd_val = 0;
+i_max_bmd = 0;
+max_bmd_val = 0;
+
+for i = n_train_start:n_train
+    locations = x_train - 52 + fix(i);
+    locations(1 > locations | locations > 1201) = 0;
     loads = P_train;
     loads(locations == 0) = 0;
     
-    
     % Reaction forces (Rearranged moment and Fy equations)
-    B_y = sum(locations .* loads) / L;
+    B_y = sum((locations - 1) .* loads) / L;
     A_y = sum(loads) - B_y;
 
     % Create a vector with forces at locations
     w = zeros(n+1, 1);
     w(1) = A_y;
-    w(locations(locations>0)) = w(locations(locations>0)) -(P/6);
-    w(L) = B_y;
+    w(L + 1) = B_y;
+    w(locations(locations>0)) = w(locations(locations>0)) - (P/6);
 
     % Create SFD and BMD vectors with integration
     SFDi(i,:) = cumsum(w');
-    BMDi(i,:) = cumtrapz(SFDi(i,:));
+%     if max(SFDi(i,:)) > max_sfd_val
+%         max_sfd_val = max(SFDi(i,:));
+%         i_max_sfd = i;
+%     end
+    BMDi(i,:) = cumsum(SFDi(i,:));
+    if max(BMDi(i,:)) > max_bmd_val
+        max_bmd_val = max(BMDi(i,:));
+        i_max_bmd = i;
+    end
 end
 
 % Get max SFD, BMD and plot
 SFD = max(abs(SFDi));
 BMD = max(BMDi);
+
+max(BMD)
+
+tiledlayout(2, 1);
+
+nexttile;
+sfdplot = plot(SFD, 'LineWidth', 3);
+title("Shear Force Diagram");
+nexttile;
+bmdplot = plot(BMD, 'LineWidth', 3);
+title("Bending Moment Diagram");
+
+% plot(SFD, 'LineWidth', 3);
+% plot(BMD, 'LineWidth', 3);
+
 
 % plot(SFD)
 
@@ -49,10 +80,10 @@ max_V = 240;
 % max_M = max(BMD);
 max_M = 6.75 * 10^4;
 
+diaphram_max = 400;
+
 param = [
     0, 100, 1, 80, 73.73, 1, 5, 1, 1;
-    400, 100, 1, 80, 73.73, 1, 5, 1, 1;
-    800, 100, 1, 80, 73.73, 1, 5, 1, 1;
     L, 100, 1, 80, 73.73, 1, 5, 1, 1;
 ];
 
@@ -124,12 +155,85 @@ S_buck3 = ((wall_layers * 1.27) ./ (ytop - deck_layers * 1.27)) .^ 2 * S_buck3;
 
 S_glue = max_M * (ytop - deck_layers * 1.27) ./ I;
 
-a = S_buck3 ./ S_glue * P;
-a(1);
-
-a = S_buck2 ./ S_top * P;
-a(1);
-
-% T_buck  =
+T_buck = (5 * pi^2 * E) / (12 * (1 - mu^2));
+t = 1.27 * wall_layers;
+b = wall_height;
+a = diaphram_max;
+T_buck =((t./b).^2 + (t./a).^2) * T_buck;
 
 
+%% 6. FOS
+FOS_tens    = S_tens ./ S_bottom;
+FOS_comp    = S_comp ./ S_top;
+FOS_shear   = T_max ./ T_cent;
+FOS_glue    = T_gmax ./ T_glue;
+FOS_buck1   = S_buck1 ./ S_comp;
+FOS_buck2   = S_buck2 ./ S_comp;
+FOS_buck3   = S_buck3 ./ S_comp;
+FOS_buckV   = T_buck ./ T_cent;
+
+%% 7. Min FOS and the failure load Pfail
+% minFOS = min(min(FOS_tens), min(FOS_comp), min(FOS_shear), min(FOS_glue), min(FOS_buck1), min(FOS_buck2), min(FOS_buck3), min(FOS_buckV));
+
+%% 8. Vfail and Mfail
+Mf_tens  = max_M * FOS_tens;
+Mf_comp  = max_M * FOS_comp;
+Vf_shear = max_V * FOS_shear;
+Vf_glue  = max_V * FOS_glue;
+Mf_buck1 = max_M * FOS_buck1;
+Mf_buck2 = max_M * FOS_buck2;
+Mf_buck3 = max_M * FOS_buck3;
+Vf_buckV = max_V * FOS_buckV;
+
+%% 9. Output plots of Vfail and Mfail
+subplot(2,3,1)
+hold on; grid on; grid minor;
+plot(x, Vf_shear, 'r')
+plot(x, max(abs(SFDi)), 'k');
+legend('Matboard Shear Failure') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Shear Force (N)')
+
+subplot(2,3,2)
+hold on; grid on; grid minor;
+plot(x, Vf_glue, 'r')
+plot(x, max(abs(SFDi)), 'k');
+legend('Glue Shear Failure') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Shear Force (N)')
+
+subplot(2,3,3)
+hold on; grid on; grid minor;
+plot(x, Vf_buckV, 'r')
+plot(x, max(abs(SFDi)), 'k');
+legend('Matboard Shear Buckling Failure') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Shear Force (N)')
+
+subplot(2,3,4)
+hold on; grid on; grid minor;
+plot(x, Mf_tens, 'r')
+plot(x, Mf_comp, 'b')
+plot(x, max(abs(BMDi)), 'k');
+legend('Matboard Tension Failure', 'Matboard Compression Faliure') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Bending Moment (Nmm)')
+
+
+subplot(2,3,5)
+hold on; grid on; grid minor;
+plot(x, Mf_buck1, 'r')
+plot(x, Mf_buck2, 'b')
+plot(x, max(abs(BMDi)), 'k');
+legend('Matboard Buckling Failure, Top Flange - Mid', 'Matboard Buckling Failure, Top Flange - Sides') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Bending Moment (Nmm)')
+
+
+subplot(2,3,6)
+hold on; grid on; grid minor;
+plot(x, Mf_buck3, 'r')
+plot(x, max(abs(BMDi)), 'k');
+legend('Matboard Buckling Failure, Webs') 
+xlabel('Distance along bridge (mm)') 
+ylabel('Bending Moment (Nmm)')
