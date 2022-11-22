@@ -78,10 +78,14 @@ design0param = [
     L, 100, 1, 80, 73.73, 1, 5, 1, 1;
 ];
 
-param = [
-    0, 100, 3, 65, 90, 1, 5, 1, 1;
-    L, 100, 3, 65, 90, 1, 5, 1, 1;
-];
+param = design0param;
+
+% param = [
+%     0, 100, 3, 65, 90, 1, 5, 1, 1;
+%     400, 80, 3, 65, 70, 1, 5, 1, 1;
+%     800, 80, 3, 65, 70, 1, 5, 1, 1;
+%     L, 100, 3, 65, 90, 1, 5, 1, 1;
+% ];
 
 deck_width = interp1(param(:,1), param(:,2), x);
 deck_layers = interp1(param(:,1), param(:,3), x);
@@ -187,39 +191,46 @@ Mf_buck2 = max_M * FOS_buck2;
 Mf_buck3 = max_M * FOS_buck3;
 Vf_buckV = max_V * FOS_buckV;
 
+% Remove line on right, it looks nicer
+max_abs_SFD = max(abs(SFDi));
+max_abs_SFD(L + 1) = max_abs_SFD(L);
+
 %% 9. Output plots of Vfail and Mfail
+
+set(gca,'fontname','Inter')
+
 subplot(2,3,1)
 hold on; grid on; grid minor;
 plot(x, Vf_shear, 'r', 'LineWidth', 2)
-plot(x, max(abs(SFDi)), 'k', 'LineWidth', 2);
-legend('Matboard Shear Failure') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Shear Force (N)')
+plot(x, max_abs_SFD, 'k', 'LineWidth', 2);
+legend('Matboard Shear Failure', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Shear Force (N)', 'FontName', 'Inter') 
 
 subplot(2,3,2)
 hold on; grid on; grid minor;
 plot(x, Vf_glue, 'r', 'LineWidth', 2)
-plot(x, max(abs(SFDi)), 'k', 'LineWidth', 2);
-legend('Glue Shear Failure') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Shear Force (N)')
+plot(x, max_abs_SFD, 'k', 'LineWidth', 2);
+legend('Glue Shear Failure', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Shear Force (N)', 'FontName', 'Inter') 
 
 subplot(2,3,3)
 hold on; grid on; grid minor;
 plot(x, Vf_buckV, 'r', 'LineWidth', 2)
-plot(x, max(abs(SFDi)), 'k', 'LineWidth', 2);
-legend('Matboard Shear Buckling Failure') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Shear Force (N)')
+plot(x, max_abs_SFD, 'k', 'LineWidth', 2);
+legend('Matboard Shear Buckling Failure', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Shear Force (N)', 'FontName', 'Inter') 
 
 subplot(2,3,4)
 hold on; grid on; grid minor;
 plot(x, Mf_tens, 'r', 'LineWidth', 2)
 plot(x, Mf_comp, 'b', 'LineWidth', 2)
 plot(x, max(abs(BMDi)), 'k', 'LineWidth', 2);
-legend('Matboard Tension Failure', 'Matboard Compression Faliure') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Bending Moment (Nmm)')
+legend('Matboard Tension Failure', 'Matboard Compression Faliure', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Bending Moment (Nmm)', 'FontName', 'Inter') 
 
 
 subplot(2,3,5)
@@ -227,21 +238,21 @@ hold on; grid on; grid minor;
 plot(x, Mf_buck1, 'r', 'LineWidth', 2)
 plot(x, Mf_buck2, 'b', 'LineWidth', 2)
 plot(x, max(abs(BMDi)), 'k', 'LineWidth', 2);
-legend('Matboard Buckling Failure, Top Flange - Mid', 'Matboard Buckling Failure, Top Flange - Sides') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Bending Moment (Nmm)')
+legend('Matboard Buckling Failure, Top Flange - Mid', 'Matboard Buckling Failure, Top Flange - Sides', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Bending Moment (Nmm)', 'FontName', 'Inter') 
 
 
 subplot(2,3,6)
 hold on; grid on; grid minor;
 plot(x, Mf_buck3, 'r', 'LineWidth', 2)
 plot(x, max(abs(BMDi)), 'k', 'LineWidth', 2);
-legend('Matboard Buckling Failure, Webs') 
-xlabel('Distance along bridge (mm)') 
-ylabel('Bending Moment (Nmm)')
+legend('Matboard Buckling Failure, Webs', 'FontName', 'Inter') 
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
+ylabel('Bending Moment (Nmm)', 'FontName', 'Inter') 
 
 
-volume_text_col = 'k';
+volume_text_col = 'g';
 vol_allow = 1.27 * 812.8 * 1016;
 if total_volume > vol_allow
     volume_text_col = 'r';
@@ -259,6 +270,6 @@ elseif fail_P > 1000
 end
 
 
-annotation('textbox', [0.01, 0.43, 0, 0], 'string', "Volume: " + round(total_volume) + " mm^3", 'FontSize', 18, 'Color', volume_text_col, 'FontWeight','bold');
-annotation('textbox', [0.01, 0.57, 0, 0], 'string', "Failure Load: " + round(fail_P) + " N", 'FontSize', 18, 'Color', fail_text_col, 'FontWeight','bold');
+annotation('textbox', [0.01, 0.47, 0.1, 0], 'string', "Volume: " + round(total_volume) + " mm^3", 'FontSize', 18, 'Color', volume_text_col, 'FontWeight','bold', 'FontName', 'Inter');
+annotation('textbox', [0.01, 0.57, 0.1, 0], 'string', "Failure Load: " + round(fail_P) + " N", 'FontSize', 18, 'Color', fail_text_col, 'FontWeight','bold', 'FontName', 'Inter');
 
