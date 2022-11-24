@@ -71,30 +71,57 @@ title("Bending Moment Diagram");
 max_V = max(SFD);
 max_M = max(BMD);
 
-diaphram_max = 400;
-
 design0param = [
-    0, 100, 1, 80, 73.73, 1, 5, 1, 1;
-    L, 100, 1, 80, 73.73, 1, 5, 1, 1;
+    0, 100, 1, 80, 73.73, 1, 5, 1;
+    L, 100, 1, 80, 73.73, 1, 5, 1;
 ];
 
-param = design0param;
+section_b_approx = [
+    0, 120, 2, 120, 100, 1, 10, 2;
+    L, 120, 2, 120, 100, 1, 10, 2;
+];
 
-% param = [
-%     0, 100, 3, 65, 90, 1, 5, 1, 1;
-%     400, 80, 3, 65, 70, 1, 5, 1, 1;
-%     800, 80, 3, 65, 70, 1, 5, 1, 1;
-%     L, 100, 3, 65, 90, 1, 5, 1, 1;
-% ];
+attempt1 = [
+    0, 100, 4, 40, 110, 1, 5, 1;
+    399, 100, 4, 40, 110, 1, 5, 1;
+    400, 100, 3, 40, 110, 1, 5, 1;
+    799, 100, 3, 40, 110, 1, 5, 1;
+    800, 100, 4, 40, 110, 1, 5, 1;
+    L, 100, 4, 40, 110, 1, 5, 1;
+];
 
+attempt2 = [
+    0, 100, 2, 60, 110, 1, 10, 1;
+    199, 100, 2, 60, 110, 1, 10, 1;
+    200, 100, 3, 60, 110, 1, 10, 1;
+    999, 100, 3, 60, 110, 1, 10, 1;
+    1000, 100, 2, 60, 110, 1, 10, 1;
+    L, 100, 2, 60, 110, 1, 10, 1;
+];
+
+% x-position, Deck Width, Deck Layers, Bottom Width, Wall Height, Wall
+% Layers, Glue Tab Width, Bottom Layers
+
+
+% Ex: Design Zero
+
+param = [
+    0, 100, 1, 80, 73.73, 1, 5, 1;
+    L, 100, 1, 80, 73.73, 1, 5, 1;
+];
+
+
+
+
+diaphram_max = 100;
 deck_width = interp1(param(:,1), param(:,2), x);
 deck_layers = interp1(param(:,1), param(:,3), x);
 bottom_width = interp1(param(:,1), param(:,4), x);
-bottom_layers = interp1(param(:,1), param(:,9), x);
+bottom_layers = interp1(param(:,1), param(:,8), x);
 wall_height = interp1(param(:,1), param(:,5), x);
 wall_layers = interp1(param(:,1), param(:,6), x);
 tab_width = interp1(param(:,1), param(:,7), x);
-tab_layers = interp1(param(:,1), param(:,8), x);
+tab_layers = interp1(param(:,1), param(:,6), x);
 
 
 deck_area = deck_width .* deck_layers .* 1.27;
@@ -107,7 +134,7 @@ bottom_area = bottom_width .* bottom_layers * 1.27;
 bottom_dist = bottom_layers * 1.27 * 0.5;
 
 total_volume = deck_area + walls_area + tab_area + bottom_area;
-total_volume = sum(total_volume);
+total_volume = sum(total_volume) + (L / diaphram_max * max(wall_height) * max(bottom_width));
 
 ybar = deck_area .* deck_dist + walls_area .* walls_dist + tab_area .* tab_dist + bottom_area .* bottom_dist;
 ybar = ybar / (deck_area + walls_area + tab_area + bottom_area);
@@ -180,6 +207,34 @@ minFOS = [min(FOS_tens), min(FOS_comp), min(FOS_shear), min(FOS_glue), min(FOS_b
 minFOS = min(minFOS);
 fail_P = minFOS * 400;
 
+failure_case = "";
+failure_equation = "";
+if minFOS == min(FOS_tens)
+    failure_case = 'Tension';
+    failure_equation = 'Minimize \frac{y_{bottom}}{I}';
+elseif minFOS == min(FOS_comp)
+    failure_case = 'Compression';
+    failure_equation = 'Minimize $$\frac{My_{top}}{I}$$';
+elseif minFOS == min(FOS_shear)
+    failure_case = 'Shear Stress';
+    failure_equation = 'Minimize $$\frac{VQ}{Ib}$$';
+elseif minFOS == min(FOS_glue)
+    failure_case = 'Glue Stress';
+    failure_equation = 'Minimize \frac{VQ}{Ib_{tabs}}';
+elseif minFOS == min(FOS_buck1)
+    failure_case = 'Bridge Mid Local Buckling';
+%     failure_equation = 'argmin$$4pi^2E...$$';
+elseif minFOS == min(FOS_buck2)
+    failure_case = 'Bridge Sides Local Buckling';
+    failure_equation = 'Minimize';
+elseif minFOS == min(FOS_buck3)
+    failure_case = 'Web Local Buckling';
+    failure_equation = 'Minimize';
+elseif minFOS == min(FOS_buckV)
+    failure_case = 'Shear Buckling';
+    failure_equation = 'Minimize';
+end
+
 
 %% 8. Vfail and Mfail
 Mf_tens  = max_M * FOS_tens;
@@ -228,7 +283,7 @@ hold on; grid on; grid minor;
 plot(x, Mf_tens, 'r', 'LineWidth', 2)
 plot(x, Mf_comp, 'b', 'LineWidth', 2)
 plot(x, max(abs(BMDi)), 'k', 'LineWidth', 2);
-legend('Matboard Tension Failure', 'Matboard Compression Faliure', 'FontName', 'Inter') 
+legend('Matboard Tension Failure', 'Matboard Compression Failure', 'FontName', 'Inter') 
 xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
 ylabel('Bending Moment (Nmm)', 'FontName', 'Inter') 
 
@@ -256,9 +311,11 @@ volume_text_col = 'g';
 vol_allow = 1.27 * 812.8 * 1016;
 if total_volume > vol_allow
     volume_text_col = 'r';
-elseif total_volume > vol_allow * 0.8
+elseif total_volume > vol_allow * 0.85
     volume_text_col = 'y';
 end
+
+vol_percent = total_volume / vol_allow * 100;
 
 fail_text_col = 'k';
 if fail_P < P
@@ -270,6 +327,8 @@ elseif fail_P > 1000
 end
 
 
-annotation('textbox', [0.01, 0.47, 0.1, 0], 'string', "Volume: " + round(total_volume) + " mm^3", 'FontSize', 18, 'Color', volume_text_col, 'FontWeight','bold', 'FontName', 'Inter');
-annotation('textbox', [0.01, 0.57, 0.1, 0], 'string', "Failure Load: " + round(fail_P) + " N", 'FontSize', 18, 'Color', fail_text_col, 'FontWeight','bold', 'FontName', 'Inter');
+annotation('textbox', [0.01, 0.37, 0.1, 0], 'string', "Volume: " + round(total_volume) + " mm^3 (" + round(vol_percent) + "%)", 'FontSize', 18, 'Color', volume_text_col, 'FontWeight','bold', 'FontName', 'Inter');
+annotation('textbox', [0.01, 0.47, 0.1, 0], 'string', "Failure Load: " + round(fail_P) + " N", 'FontSize', 18, 'Color', fail_text_col, 'FontWeight','bold', 'FontName', 'Inter');
+annotation('textbox', [0.01, 0.57, 0.1, 0], 'string', failure_equation, 'FontSize', 18, 'FontWeight','bold', 'FontName', 'Inter', 'Interpreter', 'latex');
+annotation('textbox', [0.01, 0.67, 0.1, 0], 'string', "Failure Case: " + failure_case, 'FontSize', 18, 'FontWeight','bold', 'FontName', 'Inter');
 
