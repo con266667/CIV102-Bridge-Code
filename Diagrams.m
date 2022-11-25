@@ -11,6 +11,8 @@ x_train = [52 228 392 568 732 908]; % Train Load Locations
 P_train=[1 1 1 1 1 1]*P/6; 
 n_train_start = 1;
 n_train = 345;
+% n_train_start = 1;
+% n_train = 1200;
 
 SFDi = zeros(n_train, n+1); % 1 SFD for each train loc.
 BMDi = zeros(n_train, n+1); % 1 BMD for each train loc.
@@ -54,6 +56,10 @@ end
 % Get max SFD, BMD and plot
 SFD = max(abs(SFDi));
 BMD = max(BMDi);
+
+% Remove line on right, it looks nicer
+max_abs_SFD = max(abs(SFDi));
+max_abs_SFD(L + 1) = max_abs_SFD(L);
 
 tiledlayout(2, 1);
 
@@ -138,6 +144,30 @@ attempt8 = [
     L, 100, 2, 40, 130, 1, 5, 1, 1, 130, 5;
 ];
 
+% attempt9 = [
+%     0, 150, 5, 100, 110, 5, 5, 1, 0, 130, 5;
+%     L, 150, 5, 100, 110, 5, 5, 1, 0, 130, 5;
+% ];
+
+attempt10 = [
+    0, 100, 2, 65, 125, 1, 2, 1, 0, 125, 3;
+    299, 100, 2, 65, 125, 1, 2, 1, 0, 125, 3;
+    300, 100, 2, 65, 125, 1, 2, 1, 1, 125, 3;
+    900, 100, 2, 65, 125, 1, 2, 1, 1, 125, 3;
+    901, 100, 2, 65, 125, 1, 2, 1, 0, 125, 3;
+    L, 100, 2, 65, 125, 1, 2, 1, 0, 125, 3;
+];
+
+attempt11 = [
+    0, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+    299, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+    300, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+    900, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+    901, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+    L, 100, 3, 65, 120, 1, 3, 1, 0, 130, 5;
+];
+
+
 % x-position, Deck Width, Deck Layers, Bottom Width, Wall Height, Wall
 % Layers, Glue Tab Width, Bottom Layers
 
@@ -149,7 +179,7 @@ attempt8 = [
 %     L, 100, 1, 80, 73.73, 1, 5, 1;
 % ];
 
-param = attempt8;
+param = attempt10;
 
 diaphram_max = 100;
 splice_support_width = 15;
@@ -186,7 +216,7 @@ total_volume = total_volume * (1260/1200);
 
 ybar = deck_area .* deck_dist + walls_area .* walls_dist + tab_area .* tab_dist + bottom_area .* bottom_dist;
 ybar = ybar + (crossbar_mid_area .* crossbar_height + crossbar_tab_area .* crossbar_height)  .* crossbar_include;
-ybar = ybar / (deck_area + walls_area + tab_area + bottom_area);
+ybar = ybar ./ (deck_area + walls_area + tab_area + bottom_area);
 
 ytop = bottom_layers * 1.27 + wall_height + deck_layers * 1.27 - ybar;
 ybot = ybar;
@@ -209,17 +239,16 @@ I = I + bottom_area .* (bottom_dist - ybar) .^ 2;
 I = I + (crossbar_mid_area .* (crossbar_height - ybar) .^ 2) .* crossbar_include;
 I = I + (crossbar_tab_area .* (crossbar_height - ybar) .^ 2) .* crossbar_include;
 
-
 Qcent = bottom_area .* (ybot - bottom_layers * 1.27 * 0.5);
 Qcent = Qcent + (ybot - (bottom_layers * 1.27)) .^ 2 .* wall_layers * 1.27;
 
 Qglue = deck_area .* (ytop - deck_layers * 0.5 * 1.27);
 
-S_top = max_M .* ytop ./ I;
-S_bottom = max_M .* ybot ./ I;
+S_top = max(abs(BMDi)) .* ytop ./ I;
+S_bottom = max(abs(BMDi)) .* ybot ./ I;
 
-T_cent = Qcent * max_V ./ (I * 2 .* wall_layers * 1.27);
-T_glue = Qglue * max_V ./ (I * 2 .* (tab_width + wall_layers * 1.27));
+T_cent = Qcent .* max_abs_SFD ./ (I * 2 .* wall_layers * 1.27);
+T_glue = Qglue .* max_abs_SFD ./ (I * 2 .* (tab_width + wall_layers * 1.27));
 
 E  = 4000;
 mu = 0.2;
@@ -290,20 +319,15 @@ elseif minFOS == min(FOS_buckV)
     failure_equation = 'Minimize';
 end
 
-
-% Remove line on right, it looks nicer
-max_abs_SFD = max(abs(SFDi));
-max_abs_SFD(L + 1) = max_abs_SFD(L);
-
 %% 8. Vfail and Mfail
-Mf_tens  = max_M * FOS_tens;
-Mf_comp  = max_M * FOS_comp;
-Vf_shear = max_V * FOS_shear;
-Vf_glue  = max_V * FOS_glue;
-Mf_buck1 = max_M * FOS_buck1;
-Mf_buck2 = max_M * FOS_buck2;
-Mf_buck3 = max_M * FOS_buck3;
-Vf_buckV = max_V * FOS_buckV;
+Mf_tens  = max(abs(BMDi)) .* FOS_tens;
+Mf_comp  = max(abs(BMDi)) .* FOS_comp;
+Vf_shear = max_abs_SFD .* FOS_shear;
+Vf_glue  = max_abs_SFD .* FOS_glue;
+Mf_buck1 = max(abs(BMDi)) .* FOS_buck1;
+Mf_buck2 = max(abs(BMDi)) .* FOS_buck2;
+Mf_buck3 = max(abs(BMDi)) .* FOS_buck3;
+Vf_buckV = max_abs_SFD .* FOS_buckV;
 
 
 %% 9. Output plots of Vfail and Mfail
