@@ -90,13 +90,52 @@ attempt1 = [
     L, 100, 4, 40, 110, 1, 5, 1;
 ];
 
-attempt2 = [
-    0, 100, 2, 60, 110, 1, 10, 1;
-    199, 100, 2, 60, 110, 1, 10, 1;
-    200, 100, 3, 60, 110, 1, 10, 1;
-    999, 100, 3, 60, 110, 1, 10, 1;
-    1000, 100, 2, 60, 110, 1, 10, 1;
-    L, 100, 2, 60, 110, 1, 10, 1;
+% 
+% attempt2 = [
+%     0, 100, 2, 60, 120, 1, 15, 1, 0, 0, 20;
+%     199, 100, 2, 60, 120, 1, 15, 1, 0, 0, 20;
+%     200, 100, 3, 60, 120, 1, 15, 1, 0, 0, 20;
+%     399, 100, 3, 60, 120, 1, 15, 1, 0, 0, 20;
+%     400, 100, 3, 60, 120, 1, 15, 1, 1, 100, 5;
+%     800, 100, 3, 60, 120, 1, 15, 1, 1, 100, 5;
+%     801, 100, 3, 60, 120, 1, 15, 1, 0, 0, 20;
+%     999, 100, 3, 60, 120, 1, 15, 1, 0, 0, 20;
+%     1000, 100, 2, 60, 120, 1, 15, 1, 0, 0, 20;
+%     L, 100, 2, 60, 120, 1, 15, 1, 0, 0, 20;
+% ];
+
+
+
+% 1545 N @ 92%
+attempt3 = [
+    0, 100, 2, 62, 120, 1, 3, 1, 1, 115, 5;
+    L, 100, 2, 62, 120, 1, 3, 1, 1, 115, 5;
+];
+
+
+% 1622 N @ 97%
+attempt4 = [
+    0, 100, 2, 62, 130, 1, 3, 1, 1, 115, 5;
+    549, 100, 2, 62, 130, 1, 3, 1, 1, 115, 5;
+    550, 100, 3, 62, 130, 1, 3, 1, 1, 115, 5;
+    650, 100, 3, 62, 130, 1, 3, 1, 1, 115, 5;
+    651, 100, 2, 62, 130, 1, 3, 1, 1, 115, 5;
+    L, 100, 2, 62, 130, 1, 3, 1, 1, 115, 5;
+];
+
+% attempt6 = [
+%     0, 140, 2, 70, 130, 1, 5, 1, 0, 1, 1;
+%     L, 140, 2, 70, 130, 1, 5, 1, 0, 1, 1;
+% ];
+
+% attempt7 = [
+%     0, 100, 2, 40, 130, 1, 5, 1, 1, 130, 5;
+%     L, 100, 2, 40, 130, 1, 5, 1, 1, 130, 5;
+% ];
+
+attempt8 = [
+    0, 100, 2, 40, 130, 1, 5, 1, 1, 130, 5;
+    L, 100, 2, 40, 130, 1, 5, 1, 1, 130, 5;
 ];
 
 % x-position, Deck Width, Deck Layers, Bottom Width, Wall Height, Wall
@@ -105,15 +144,15 @@ attempt2 = [
 
 % Ex: Design Zero
 
-param = [
-    0, 100, 1, 80, 73.73, 1, 5, 1;
-    L, 100, 1, 80, 73.73, 1, 5, 1;
-];
+% param = [
+%     0, 100, 1, 80, 73.73, 1, 5, 1;
+%     L, 100, 1, 80, 73.73, 1, 5, 1;
+% ];
 
-
-
+param = attempt8;
 
 diaphram_max = 100;
+splice_support_width = 15;
 deck_width = interp1(param(:,1), param(:,2), x);
 deck_layers = interp1(param(:,1), param(:,3), x);
 bottom_width = interp1(param(:,1), param(:,4), x);
@@ -122,6 +161,9 @@ wall_height = interp1(param(:,1), param(:,5), x);
 wall_layers = interp1(param(:,1), param(:,6), x);
 tab_width = interp1(param(:,1), param(:,7), x);
 tab_layers = interp1(param(:,1), param(:,6), x);
+crossbar_include = interp1(param(:,1), param(:,9), x);
+crossbar_height = interp1(param(:,1), param(:,10), x);
+crossbar_tab_height = interp1(param(:,1), param(:,11), x);
 
 
 deck_area = deck_width .* deck_layers .* 1.27;
@@ -132,11 +174,18 @@ tab_area = tab_width .* tab_layers * 1.27 * 2;
 tab_dist = bottom_layers * 1.27 + wall_height - tab_layers * 1.27 * 0.5;
 bottom_area = bottom_width .* bottom_layers * 1.27;
 bottom_dist = bottom_layers * 1.27 * 0.5;
+crossbar_mid_area = 1.27 * (bottom_width - 2.54);
+crossbar_tab_area = 2 * 1.27 * crossbar_tab_height;
+
 
 total_volume = deck_area + walls_area + tab_area + bottom_area;
-total_volume = sum(total_volume) + (L / diaphram_max * max(wall_height) * max(bottom_width));
+total_volume = total_volume + (crossbar_mid_area + crossbar_tab_area)  .* crossbar_include;
+total_volume = sum(total_volume) + (L / diaphram_max * (max(wall_height) + 20) * max(bottom_width));
+total_volume = total_volume + splice_support_width * max((2 * wall_height + bottom_width));
+total_volume = total_volume * (1260/1200);
 
 ybar = deck_area .* deck_dist + walls_area .* walls_dist + tab_area .* tab_dist + bottom_area .* bottom_dist;
+ybar = ybar + (crossbar_mid_area .* crossbar_height + crossbar_tab_area .* crossbar_height)  .* crossbar_include;
 ybar = ybar / (deck_area + walls_area + tab_area + bottom_area);
 
 ytop = bottom_layers * 1.27 + wall_height + deck_layers * 1.27 - ybar;
@@ -147,6 +196,9 @@ I = deck_width .* (deck_layers * 1.27) .^ 3;
 I = I + 2 * wall_layers .* 1.27 .* (wall_height .^ 3);
 I = I + 2 * tab_width .* (tab_layers * 1.27) .^ 3;
 I = I + bottom_width .* (bottom_layers * 1.27) .^ 3;
+I = I + ((bottom_width - 2.54) * 1.27 ^ 3) .* crossbar_include;
+I = I + (1.27 * crossbar_tab_height .^ 3) .* crossbar_include;
+
 I = I / 12;
 
 % Ad^2
@@ -154,6 +206,9 @@ I = I + deck_area .* (deck_dist - ybar) .^ 2;
 I = I + walls_area .* (walls_dist - ybar) .^ 2;
 I = I + tab_area .* (tab_dist - ybar) .^ 2;
 I = I + bottom_area .* (bottom_dist - ybar) .^ 2;
+I = I + (crossbar_mid_area .* (crossbar_height - ybar) .^ 2) .* crossbar_include;
+I = I + (crossbar_tab_area .* (crossbar_height - ybar) .^ 2) .* crossbar_include;
+
 
 Qcent = bottom_area .* (ybot - bottom_layers * 1.27 * 0.5);
 Qcent = Qcent + (ybot - (bottom_layers * 1.27)) .^ 2 .* wall_layers * 1.27;
@@ -177,7 +232,7 @@ S_buck1 = (4 * pi^2 * E) / (12 * (1 - mu^2));
 S_buck1 = ((deck_layers * 1.27) ./ (bottom_width - wall_layers * 1.27)) .^ 2 * S_buck1;
 
 S_buck2 = (0.425 * pi^2 * E) / (12 * (1 - mu^2));
-S_buck2 = ((deck_layers * 1.27) ./ ((deck_width - bottom_width) * 0.5 + (wall_layers * 1.27) * 0.5)) .^ 2 * S_buck2;
+S_buck2 = ((deck_layers * 1.27) ./ ((deck_width - bottom_width) * 0.5)) .^ 2 * S_buck2;
 
 
 S_buck3 = (6 * pi^2 * E) / (12 * (1 - mu^2));
@@ -197,9 +252,9 @@ FOS_tens    = S_tens ./ S_bottom;
 FOS_comp    = S_comp ./ S_top;
 FOS_shear   = T_max ./ T_cent;
 FOS_glue    = T_gmax ./ T_glue;
-FOS_buck1   = S_buck1 ./ S_comp;
-FOS_buck2   = S_buck2 ./ S_comp;
-FOS_buck3   = S_buck3 ./ S_comp;
+FOS_buck1   = S_buck1 ./ S_top;
+FOS_buck2   = S_buck2 ./ S_top;
+FOS_buck3   = S_buck3 ./ S_top;
 FOS_buckV   = T_buck ./ T_cent;
 
 %% 7. Min FOS and the failure load Pfail
@@ -236,6 +291,10 @@ elseif minFOS == min(FOS_buckV)
 end
 
 
+% Remove line on right, it looks nicer
+max_abs_SFD = max(abs(SFDi));
+max_abs_SFD(L + 1) = max_abs_SFD(L);
+
 %% 8. Vfail and Mfail
 Mf_tens  = max_M * FOS_tens;
 Mf_comp  = max_M * FOS_comp;
@@ -246,9 +305,6 @@ Mf_buck2 = max_M * FOS_buck2;
 Mf_buck3 = max_M * FOS_buck3;
 Vf_buckV = max_V * FOS_buckV;
 
-% Remove line on right, it looks nicer
-max_abs_SFD = max(abs(SFDi));
-max_abs_SFD(L + 1) = max_abs_SFD(L);
 
 %% 9. Output plots of Vfail and Mfail
 
@@ -293,9 +349,9 @@ hold on; grid on; grid minor;
 plot(x, Mf_buck1, 'r', 'LineWidth', 2)
 plot(x, Mf_buck2, 'b', 'LineWidth', 2)
 plot(x, max(abs(BMDi)), 'k', 'LineWidth', 2);
-legend('Matboard Buckling Failure, Top Flange - Mid', 'Matboard Buckling Failure, Top Flange - Sides', 'FontName', 'Inter') 
-xlabel('Distance along bridge (mm)', 'FontName', 'Inter') 
-ylabel('Bending Moment (Nmm)', 'FontName', 'Inter') 
+legend('Matboard Buckling Failure, Top Flange - Mid', 'Matboard Buckling Failure, Top Flange - Sides', 'FontName', 'Inter')
+xlabel('Distance along bridge (mm)', 'FontName', 'Inter')
+ylabel('Bending Moment (Nmm)', 'FontName', 'Inter')
 
 
 subplot(2,3,6)
